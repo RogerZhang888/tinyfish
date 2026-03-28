@@ -3,7 +3,7 @@
 RunWise is an intelligent running shoe recommendation platform that combines:
 
 - Profile-aware user input
-- TinyFish-driven web scraping (mocked in this MVP)
+- TinyFish-driven web scraping
 - Data normalization and aggregation
 - LLM-assisted planning and recommendation ranking
 

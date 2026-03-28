@@ -103,23 +103,28 @@ class SupabaseShoeRepository:
         price = row.get("price")
         foot_shape = row.get("foot_shape")
         shoe_type = row.get("type")
+        weight_grams = row.get("weight_grams")
 
         key_features: list[str] = []
         if price is not None:
-            key_features.append(f"Price: ${price}")
+            key_features.append(f"Price: S${price}")
         if shoe_type:
             key_features.append(f"Type: {shoe_type}")
         if foot_shape:
             key_features.append(f"Foot shape: {foot_shape}")
+        if weight_grams is not None:
+            key_features.append(f"Weight: {weight_grams}g")
 
         return RecommendationItem(
             name=name,
             brand=brand,
             score=100,
+            price_sgd=float(price) if price is not None else None,
+            weight_grams=int(weight_grams) if weight_grams is not None else None,
             key_features=key_features,
             reason=(
                 "Matched your selected filters"
-                f" for budget under ${user_input.budget:.0f},"
+                f" for budget under S${user_input.budget:.0f},"
                 f" shoe type {user_input.shoe_type.value},"
                 f" and foot shape {user_input.foot_shape.value}."
             ),

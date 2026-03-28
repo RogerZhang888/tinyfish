@@ -20,6 +20,8 @@ import BaseLayout from "../layouts/BaseLayout.astro"
 			name: string
 			brand: string
 			score: number
+			price_sgd?: number | null
+			weight_grams?: number | null
 			key_features: string[]
 			reason: string
 			best_for: string
@@ -76,7 +78,7 @@ import BaseLayout from "../layouts/BaseLayout.astro"
 						? item.key_features
 								.map(
 									(feature: string) =>
-										`<span class=\"tag\">${escapeHtml(String(feature))}</span>`
+										`<span class="tag">${escapeHtml(String(feature))}</span>`
 								)
 								.join("")
 						: ""
@@ -85,26 +87,38 @@ import BaseLayout from "../layouts/BaseLayout.astro"
 						? item.sources
 								.map((source: string) => {
 									const safeSource = escapeHtml(String(source))
-									return `<a href=\"${safeSource}\" target=\"_blank\" rel=\"noreferrer\">${safeSource}</a>`
+									return `<a href="${safeSource}" target="_blank" rel="noreferrer">${safeSource}</a>`
 								})
 								.join(" | ")
 						: ""
+
 					const imageMarkup =
 						typeof item.image_source === "string" && item.image_source
-							? `<div class=\"result-image-wrap\"><img class=\"result-image\" src=\"${escapeHtml(String(item.image_source))}\" alt=\"${escapeHtml(String(item.brand))} ${escapeHtml(String(item.name))}\" loading=\"lazy\" /></div>`
+							? `<div class="result-image-wrap"><img class="result-image" src="${escapeHtml(String(item.image_source))}" alt="${escapeHtml(String(item.brand))} ${escapeHtml(String(item.name))}" loading="lazy" /></div>`
+							: ""
+
+					const priceMarkup =
+						typeof item.price_sgd === "number"
+							? `<div class="price-chip">S$${Number(item.price_sgd).toFixed(0)}</div>`
+							: ""
+
+					const weightText =
+						typeof item.weight_grams === "number"
+							? ` Weight: ${Number(item.weight_grams)}g.`
 							: ""
 
 					return `
-            <article class=\"card result-card\" style=\"animation-delay: ${index * 80}ms;\">
+            <article class="card result-card" style="animation-delay: ${index * 80}ms;">
               ${imageMarkup}
-              <div class=\"result-title\">
+              <div class="result-title">
                 <h3>${index + 1}. ${escapeHtml(String(item.brand))} ${escapeHtml(String(item.name))}</h3>
-                <span class=\"score-chip\">${Number(item.score)} / 100</span>
+                <span class="score-chip">${Number(item.score)} / 100</span>
               </div>
-              <p><strong>Why recommended:</strong> ${escapeHtml(String(item.reason))}</p>
+              ${priceMarkup}
+              <p><strong>Why recommended:</strong> ${escapeHtml(String(item.reason))}${escapeHtml(weightText)}</p>
               <p><strong>Best for:</strong> ${escapeHtml(String(item.best_for))}</p>
-              <div class=\"tag-row\">${features}</div>
-              <p class=\"meta"><strong>Sources:</strong> ${sourceLinks}</p>
+              <div class="tag-row">${features}</div>
+              <p class="meta"><strong>Sources:</strong> ${sourceLinks}</p>
             </article>
           `
 				})

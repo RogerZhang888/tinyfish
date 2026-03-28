@@ -74,6 +74,8 @@ class RecommendationItem(BaseModel):
     name: str
     brand: str
     score: int = Field(ge=0, le=100)
+    price_sgd: float | None = None
+    weight_grams: int | None = None
     key_features: list[str] = Field(default_factory=list)
     reason: str
     best_for: str

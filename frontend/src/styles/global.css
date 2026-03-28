@@ -202,6 +202,16 @@ button.primary:hover {
   animation: card-in 500ms ease both;
 }
 
+.price-chip {
+  display: inline-flex;
+  margin: 0.2rem 0 0.7rem;
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+}
+
 .result-image-wrap {
   margin-bottom: 0.95rem;
   overflow: hidden;
