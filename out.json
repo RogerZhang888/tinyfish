@@ -5,10 +5,11 @@
     "brand": "adidas",
     "weight": 238,
     "type": [
+      "racer",
       "daily trainer",
       "tempo"
     ],
-    "description": "Lightweight running shoes for daily speed. Running is a way to discover what you're capable of, and these adidas running shoes are tuned to help you do just that. The Lightstrike Pro midsole is resilient, responsive and comfortable \u2014 designed to keep you moving at top speed for the duration of your run. The mono mesh upper is lightweight and breathable, so you stay comfortable as the miles roll by.",
+    "description": "Lightweight running shoes for daily speed. The Lightstrike Pro midsole is resilient, responsive and comfortable. The mono mesh upper is lightweight and breathable.",
     "image_source": "https://assets.adidas.com/images/w_600,f_auto,q_auto/fce4db98817644f3b079c0f981a8173f_9366/Adizero_SL_2_Shoes_Blue_JQ0814_01_00_standard.jpg",
     "url": "https://www.adidas.com.sg/adizero-sl-2-shoes/JQ0814.html",
     "foot_shape": "neutral"
