@@ -19,6 +19,7 @@ class TinyFishScraperAgent:
     """
 
     def __init__(self) -> None:
+        logger.info("TinyFishScraperAgent.__init__ called")
         self.api_key = os.getenv("TINYFISH_API_KEY")
         self.base_url = os.getenv(
             "TINYFISH_BASE_URL", "https://agent.tinyfish.ai/v1/automation/run"
@@ -27,18 +28,27 @@ class TinyFishScraperAgent:
     def scrape(
         self, plan: ScrapePlan, user_input: RecommendationRequest
     ) -> list[ScrapedShoeData]:
+        logger.info("TinyFishScraperAgent.scrape called targets=%s", len(plan.targets))
         if not self.api_key:
             raise ValueError("TINYFISH_API_KEY is not configured")
 
-        scraped_items: list[ScrapedShoeData] = []
-        for target in plan.targets:
-            target_items = self._scrape_target(
-                source_url=str(target.url),
-                goal=target.goal,
-                user_input=user_input,
+        try:
+            scraped_items: list[ScrapedShoeData] = []
+            for target in plan.targets:
+                target_items = self._scrape_target(
+                    source_url=str(target.url),
+                    goal=target.goal,
+                    user_input=user_input,
+                )
+                scraped_items.extend(target_items)
+            logger.info(
+                "TinyFishScraperAgent.scrape completed items=%s",
+                len(scraped_items),
             )
-            scraped_items.extend(target_items)
-        return scraped_items
+            return scraped_items
+        except Exception as exc:
+            logger.exception("TinyFishScraperAgent.scrape failed: %s", exc)
+            raise
 
     def _scrape_target(
         self,
@@ -46,6 +56,10 @@ class TinyFishScraperAgent:
         goal: str,
         user_input: RecommendationRequest,
     ) -> Iterable[ScrapedShoeData]:
+        logger.info(
+            "TinyFishScraperAgent._scrape_target called source_url=%s",
+            source_url,
+        )
         payload = {
             "url": source_url,
             "goal": self._build_goal(goal, user_input),
@@ -69,6 +83,7 @@ class TinyFishScraperAgent:
             yield shoe
 
     def _build_goal(self, goal: str, user_input: RecommendationRequest) -> str:
+        logger.info("TinyFishScraperAgent._build_goal called")
         return (
             f"{goal}. Extract shoes relevant to this runner profile: "
             f"{user_input.model_dump_json()}. "
@@ -80,6 +95,7 @@ class TinyFishScraperAgent:
         )
 
     def _post_json(self, payload: dict) -> dict:
+        logger.info("TinyFishScraperAgent._post_json called url=%s", self.base_url)
         body = json.dumps(payload).encode("utf-8")
         req = request.Request(
             self.base_url,
@@ -96,10 +112,12 @@ class TinyFishScraperAgent:
                 raw_body = resp.read().decode("utf-8")
         except error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
+            logger.exception("TinyFishScraperAgent._post_json http error: %s", detail)
             raise ValueError(
                 f"TinyFish request failed with status {exc.code}: {detail}"
             ) from exc
         except error.URLError as exc:
+            logger.exception("TinyFishScraperAgent._post_json url error: %s", exc)
             raise ValueError(f"TinyFish request could not be completed: {exc}") from exc
 
         parsed = json.loads(raw_body)
@@ -110,6 +128,7 @@ class TinyFishScraperAgent:
     def _extract_shoes(
         self, result: object, source_url: str
     ) -> Iterable[ScrapedShoeData]:
+        logger.info("TinyFishScraperAgent._extract_shoes called source_url=%s", source_url)
         parsed_result = result
         if isinstance(parsed_result, str):
             parsed_result = json.loads(parsed_result)
@@ -145,12 +164,14 @@ class TinyFishScraperAgent:
             )
 
     def _optional_text(self, value: object) -> str | None:
+        logger.info("TinyFishScraperAgent._optional_text called")
         if value is None:
             return None
         text = str(value).strip()
         return text or None
 
     def _optional_int(self, value: object) -> int | None:
+        logger.info("TinyFishScraperAgent._optional_int called")
         if value in (None, ""):
             return None
         try:
@@ -159,6 +180,7 @@ class TinyFishScraperAgent:
             return None
 
     def _optional_float(self, value: object) -> float | None:
+        logger.info("TinyFishScraperAgent._optional_float called")
         if value in (None, ""):
             return None
         try:
@@ -167,6 +189,7 @@ class TinyFishScraperAgent:
             return None
 
     def _string_list(self, value: object) -> list[str]:
+        logger.info("TinyFishScraperAgent._string_list called")
         if not isinstance(value, list):
             return []
         return [str(item).strip() for item in value if str(item).strip()]

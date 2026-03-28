@@ -34,6 +34,7 @@ class ExperienceLevel(str, Enum):
 
 class RecommendationRequest(BaseModel):
     budget: float = Field(gt=0, description="Budget in USD")
+    brand: str | None = None
     shoe_type: ShoeType
     foot_shape: FootShape
     running_style: RunningStyle
@@ -76,6 +77,7 @@ class RecommendationItem(BaseModel):
     key_features: list[str] = Field(default_factory=list)
     reason: str
     best_for: str
+    image_source: HttpUrl | None = None
     sources: list[HttpUrl] = Field(default_factory=list)
 
 

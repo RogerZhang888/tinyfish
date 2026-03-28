@@ -92,34 +92,13 @@
 		</div>
 
 		<div class="field" style="margin-top: 1rem;">
-			<label>Preferences</label>
-			<div class="pill-list">
-				<label
-					><input
-						type="checkbox"
-						name="preferences"
-						value="high cushioning"
-					/>High cushioning</label
-				>
-				<label
-					><input
-						type="checkbox"
-						name="preferences"
-						value="stability"
-					/>Stability</label
-				>
-				<label
-					><input
-						type="checkbox"
-						name="preferences"
-						value="lightweight"
-					/>Lightweight</label
-				>
-				<label
-					><input type="checkbox" name="preferences" value="good lacing" />Good
-					lacing</label
-				>
-			</div>
+			<label for="user_notes">Preferences</label>
+			<textarea
+				id="user_notes"
+				name="user_notes"
+				rows="4"
+				placeholder="Anything else you want us to know about fit, feel, terrain, or favorite brands?"
+			></textarea>
 		</div>
 
 		<button class="primary" id="submit-button" type="submit"
@@ -149,7 +128,8 @@
 				shoe_type: String(formData.get("shoe_type")),
 				foot_shape: String(formData.get("foot_shape")),
 				running_style: String(formData.get("running_style")),
-				preferences: formData.getAll("preferences").map(value => String(value)),
+				preferences: [],
+				user_notes: String(formData.get("user_notes") ?? ""),
 				height_cm: Number(formData.get("height_cm")),
 				weight_kg: Number(formData.get("weight_kg")),
 				weekly_mileage_km: Number(formData.get("weekly_mileage_km")),

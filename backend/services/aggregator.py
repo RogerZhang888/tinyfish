@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import logging
 
 from backend.models.schemas import ScrapedShoeData
+
+logger = logging.getLogger(__name__)
 
 
 class ShoeAggregator:
@@ -28,20 +31,40 @@ class ShoeAggregator:
     }
 
     def aggregate(self, scraped_items: list[ScrapedShoeData]) -> list[ScrapedShoeData]:
-        grouped: dict[str, list[ScrapedShoeData]] = defaultdict(list)
-        for item in scraped_items:
-            key = self._dedupe_key(item)
-            grouped[key].append(self._normalize_item(item))
+        logger.info("ShoeAggregator.aggregate called items=%s", len(scraped_items))
+        try:
+            grouped: dict[str, list[ScrapedShoeData]] = defaultdict(list)
+            for item in scraped_items:
+                key = self._dedupe_key(item)
+                grouped[key].append(self._normalize_item(item))
 
-        normalized: list[ScrapedShoeData] = []
-        for key, items in grouped.items():
-            normalized.append(self._merge_entries(key, items))
-        return normalized
+            normalized: list[ScrapedShoeData] = []
+            for key, items in grouped.items():
+                normalized.append(self._merge_entries(key, items))
+            logger.info(
+                "ShoeAggregator.aggregate completed groups=%s normalized=%s",
+                len(grouped),
+                len(normalized),
+            )
+            return normalized
+        except Exception as exc:
+            logger.exception("ShoeAggregator.aggregate failed: %s", exc)
+            raise
 
     def _dedupe_key(self, item: ScrapedShoeData) -> str:
+        logger.info(
+            "ShoeAggregator._dedupe_key called brand=%s shoe_name=%s",
+            item.brand,
+            item.shoe_name,
+        )
         return f"{item.brand.strip().lower()}::{item.shoe_name.strip().lower()}"
 
     def _normalize_item(self, item: ScrapedShoeData) -> ScrapedShoeData:
+        logger.info(
+            "ShoeAggregator._normalize_item called brand=%s shoe_name=%s",
+            item.brand,
+            item.shoe_name,
+        )
         normalized_cushioning = self._normalize_label(
             item.cushioning, self.CUSHIONING_MAP
         )
@@ -56,12 +79,14 @@ class ShoeAggregator:
     def _normalize_label(
         self, value: str | None, mapping: dict[str, str]
     ) -> str | None:
+        logger.info("ShoeAggregator._normalize_label called value=%s", value)
         if value is None:
             return None
         lowered = value.strip().lower()
         return mapping.get(lowered, lowered)
 
     def _merge_entries(self, key: str, items: list[ScrapedShoeData]) -> ScrapedShoeData:
+        logger.info("ShoeAggregator._merge_entries called key=%s items=%s", key, len(items))
         first = items[0]
         pros = sorted({pro for item in items for pro in item.pros})
         cons = sorted({con for item in items for con in item.cons})
@@ -81,6 +106,7 @@ class ShoeAggregator:
         return merged
 
     def _pick_most_specific(self, values: list[str | None]) -> str | None:
+        logger.info("ShoeAggregator._pick_most_specific called values=%s", len(values))
         filtered = [value for value in values if value]
         if not filtered:
             return None
@@ -88,6 +114,7 @@ class ShoeAggregator:
         return max(filtered, key=lambda value: priority.get(value, 0))
 
     def _pick_min(self, values: list[int | float | None]) -> int | float | None:
+        logger.info("ShoeAggregator._pick_min called values=%s", len(values))
         filtered = [value for value in values if value is not None]
         if not filtered:
             return None

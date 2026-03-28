@@ -23,6 +23,7 @@ import BaseLayout from "../layouts/BaseLayout.astro"
 			key_features: string[]
 			reason: string
 			best_for: string
+			image_source?: string | null
 			sources: string[]
 		}
 
@@ -88,9 +89,14 @@ import BaseLayout from "../layouts/BaseLayout.astro"
 								})
 								.join(" | ")
 						: ""
+					const imageMarkup =
+						typeof item.image_source === "string" && item.image_source
+							? `<div class=\"result-image-wrap\"><img class=\"result-image\" src=\"${escapeHtml(String(item.image_source))}\" alt=\"${escapeHtml(String(item.brand))} ${escapeHtml(String(item.name))}\" loading=\"lazy\" /></div>`
+							: ""
 
 					return `
             <article class=\"card result-card\" style=\"animation-delay: ${index * 80}ms;\">
+              ${imageMarkup}
               <div class=\"result-title\">
                 <h3>${index + 1}. ${escapeHtml(String(item.brand))} ${escapeHtml(String(item.name))}</h3>
                 <span class=\"score-chip\">${Number(item.score)} / 100</span>

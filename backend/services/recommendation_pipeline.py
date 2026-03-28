@@ -1,42 +1,43 @@
 from __future__ import annotations
 
+import logging
+
 from backend.models.schemas import (
     PipelineMetadata,
     RecommendationRequest,
     RecommendationResponse,
 )
-from backend.services.aggregator import ShoeAggregator
-from backend.services.planner import QueryPlanner
-from backend.services.ranker import ShoeRanker
-from backend.services.tinyfish_agent import TinyFishScraperAgent
+from backend.services.shoe_repository import SupabaseShoeRepository
+
+logger = logging.getLogger(__name__)
 
 
 class RecommendationPipeline:
-    """Orchestrates Planner -> TinyFish Agent -> Aggregator -> Ranker."""
+    """Fetch recommendations from Supabase based on user filters."""
 
     def __init__(
         self,
-        planner: QueryPlanner,
-        tinyfish_agent: TinyFishScraperAgent,
-        aggregator: ShoeAggregator,
-        ranker: ShoeRanker,
+        shoe_repository: SupabaseShoeRepository,
     ) -> None:
-        self.planner = planner
-        self.tinyfish_agent = tinyfish_agent
-        self.aggregator = aggregator
-        self.ranker = ranker
+        self.shoe_repository = shoe_repository
 
     def recommend(self, user_input: RecommendationRequest) -> RecommendationResponse:
-        plan = self.planner.create_plan(user_input)
-        scraped_items = self.tinyfish_agent.scrape(plan, user_input)
-        normalized_items = self.aggregator.aggregate(scraped_items)
-        ranked_items = self.ranker.rank(user_input, normalized_items)
+        logger.info("RecommendationPipeline.recommend called")
+        try:
+            recommendations = self.shoe_repository.search_shoes(user_input)
+            logger.info(
+                "RecommendationPipeline.recommend search_completed items=%s",
+                len(recommendations),
+            )
 
-        return RecommendationResponse(
-            recommendations=ranked_items,
-            metadata=PipelineMetadata(
-                targets_planned=len(plan.targets),
-                items_scraped=len(scraped_items),
-                items_normalized=len(normalized_items),
-            ),
-        )
+            return RecommendationResponse(
+                recommendations=recommendations,
+                metadata=PipelineMetadata(
+                    targets_planned=1,
+                    items_scraped=len(recommendations),
+                    items_normalized=len(recommendations),
+                ),
+            )
+        except Exception as exc:
+            logger.exception("RecommendationPipeline.recommend failed: %s", exc)
+            raise

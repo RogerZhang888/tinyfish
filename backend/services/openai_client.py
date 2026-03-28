@@ -31,12 +31,14 @@ class OpenAIClient:
 
     @property
     def enabled(self) -> bool:
+        logger.info("OpenAIClient.enabled checked enabled=%s", self._client is not None)
         return self._client is not None
 
     def plan_targets(
         self, user_input: RecommendationRequest
     ) -> list[PlannedTarget] | None:
         """Return dynamic scrape targets suggested by the LLM, or None if unavailable."""
+        logger.info("OpenAIClient.plan_targets called")
         if not self.enabled:
             return None
 
@@ -58,7 +60,8 @@ class OpenAIClient:
             parsed = json.loads(raw_text)
             targets = parsed.get("targets", [])
             return [PlannedTarget(**target) for target in targets]
-        except Exception:
+        except Exception as exc:
+            logger.exception("OpenAIClient.plan_targets failed: %s", exc)
             return None
 
     def rerank_recommendations(
@@ -67,6 +70,10 @@ class OpenAIClient:
         scored_shoes: list[dict[str, Any]],
     ) -> list[dict[str, Any]] | None:
         """Optionally ask the LLM to refine explanations/ranking while preserving schema."""
+        logger.info(
+            "OpenAIClient.rerank_recommendations called candidates=%s",
+            len(scored_shoes),
+        )
         if not self.enabled:
             return None
 
@@ -94,11 +101,17 @@ class OpenAIClient:
             if isinstance(parsed, list):
                 return parsed
             return None
-        except Exception:
+        except Exception as exc:
+            logger.exception("OpenAIClient.rerank_recommendations failed: %s", exc)
             return None
 
     @staticmethod
     def feature_summary(shoe: ScrapedShoeData) -> list[str]:
+        logger.info(
+            "OpenAIClient.feature_summary called brand=%s shoe_name=%s",
+            shoe.brand,
+            shoe.shoe_name,
+        )
         features: list[str] = []
         if shoe.cushioning:
             features.append(f"Cushioning: {shoe.cushioning}")

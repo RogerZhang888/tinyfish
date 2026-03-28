@@ -112,12 +112,14 @@ label {
 
 input,
 select,
+textarea,
 button {
   font: inherit;
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -126,9 +128,15 @@ select {
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   border-color: var(--brand);
   outline: 2px solid rgba(13, 148, 136, 0.16);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 7rem;
 }
 
 button.primary {
@@ -192,6 +200,21 @@ button.primary:hover {
 .result-card {
   padding: 1rem 1.1rem;
   animation: card-in 500ms ease both;
+}
+
+.result-image-wrap {
+  margin-bottom: 0.95rem;
+  overflow: hidden;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f6fbfa 0%, #edf6f3 100%);
+  border: 1px solid #d9ebe7;
+}
+
+.result-image {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
 }
 
 .result-title {
