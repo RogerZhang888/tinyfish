@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any
 
 from backend.models.schemas import PlannedTarget, RecommendationRequest, ScrapedShoeData
+
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAIClient:
@@ -19,8 +23,11 @@ class OpenAIClient:
                 from openai import OpenAI
 
                 self._client = OpenAI(api_key=self.api_key)
-            except Exception:
+            except Exception as exc:
+                logger.warning("OpenAI client disabled: %s", exc)
                 self._client = None
+        else:
+            logger.warning("OpenAI client disabled: OPENAI_API_KEY is not configured")
 
     @property
     def enabled(self) -> bool:
@@ -41,6 +48,7 @@ class OpenAIClient:
         )
 
         try:
+            logger.info("Calling OpenAI plan_targets model=%s", self.model)
             response = self._client.responses.create(
                 model=self.model,
                 input=prompt,
@@ -71,6 +79,11 @@ class OpenAIClient:
         )
 
         try:
+            logger.info(
+                "Calling OpenAI rerank_recommendations model=%s candidates=%s",
+                self.model,
+                len(scored_shoes),
+            )
             response = self._client.responses.create(
                 model=self.model,
                 input=prompt,

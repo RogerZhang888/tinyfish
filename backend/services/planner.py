@@ -21,12 +21,12 @@ class QueryPlanner:
 
     def create_plan(self, user_input: RecommendationRequest) -> ScrapePlan:
         domain_sections = self._read_website_sections()
-        targets: list[PlannedTarget] = []
+        allowed_targets: list[PlannedTarget] = []
 
         for section, domains in domain_sections.items():
             for domain in domains:
                 source_type = self._source_type_for(section, domain)
-                targets.append(
+                allowed_targets.append(
                     PlannedTarget(
                         url=self._normalize_url(domain),
                         goal=self._goal_for(source_type, user_input),
@@ -34,12 +34,34 @@ class QueryPlanner:
                     )
                 )
 
-        if not targets:
+        if not allowed_targets:
             raise ValueError(
                 f"No valid websites found in {self.websites_file}. Add domains under markdown headers."
             )
 
-        return ScrapePlan(targets=targets)
+        llm_targets = self.openai_client.plan_targets(user_input) or []
+        if llm_targets:
+            allowed_by_host = {
+                target.url.host.removeprefix("www."): target for target in allowed_targets
+            }
+            filtered_targets: list[PlannedTarget] = []
+            for target in llm_targets:
+                allowed_target = allowed_by_host.get(
+                    target.url.host.removeprefix("www.")
+                )
+                if not allowed_target:
+                    continue
+                filtered_targets.append(
+                    PlannedTarget(
+                        url=target.url,
+                        goal=target.goal,
+                        source_type=allowed_target.source_type,
+                    )
+                )
+            if filtered_targets:
+                return ScrapePlan(targets=filtered_targets)
+
+        return ScrapePlan(targets=allowed_targets)
 
     def _read_website_sections(self) -> dict[str, list[str]]:
         if not self.websites_file.exists():

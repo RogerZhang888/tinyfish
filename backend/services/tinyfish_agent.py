@@ -1,122 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import json
+import logging
 import os
-import random
+from urllib import error, request
 
 from backend.models.schemas import RecommendationRequest, ScrapePlan, ScrapedShoeData
 
-
-MOCK_SHOE_DB: list[dict] = [
-    {
-        "shoe_name": "Novablast 5",
-        "brand": "ASICS",
-        "cushioning": "high",
-        "stability": "neutral",
-        "weight_grams": 252,
-        "use_case": "daily trainer",
-        "price_usd": 140,
-        "foot_shape_fit": "neutral",
-        "pros": ["Bouncy ride", "Great value"],
-        "cons": ["Softer heel may feel unstable for some"],
-    },
-    {
-        "shoe_name": "Gel-Kayano 31",
-        "brand": "ASICS",
-        "cushioning": "max",
-        "stability": "high",
-        "weight_grams": 303,
-        "use_case": "long run",
-        "price_usd": 165,
-        "foot_shape_fit": "wide",
-        "pros": ["Excellent support", "Comfortable over long mileage"],
-        "cons": ["Heavier than neutral trainers"],
-    },
-    {
-        "shoe_name": "Adizero Boston 13",
-        "brand": "Adidas",
-        "cushioning": "medium",
-        "stability": "neutral",
-        "weight_grams": 267,
-        "use_case": "tempo",
-        "price_usd": 160,
-        "foot_shape_fit": "narrow",
-        "pros": ["Fast turnover", "Versatile training shoe"],
-        "cons": ["Firm feel at easy pace"],
-    },
-    {
-        "shoe_name": "Alphafly 3",
-        "brand": "Nike",
-        "cushioning": "max",
-        "stability": "neutral",
-        "weight_grams": 218,
-        "use_case": "racer",
-        "price_usd": 285,
-        "foot_shape_fit": "narrow",
-        "pros": ["Elite race performance", "Explosive rebound"],
-        "cons": ["Premium price", "Not ideal for daily running"],
-    },
-    {
-        "shoe_name": "Vomero 18",
-        "brand": "Nike",
-        "cushioning": "max",
-        "stability": "neutral",
-        "weight_grams": 300,
-        "use_case": "daily trainer",
-        "price_usd": 160,
-        "foot_shape_fit": "wide",
-        "pros": ["Very plush underfoot", "Smooth easy-day ride"],
-        "cons": ["Not the lightest option"],
-    },
-    {
-        "shoe_name": "Endorphin Speed 5",
-        "brand": "Saucony",
-        "cushioning": "high",
-        "stability": "neutral",
-        "weight_grams": 229,
-        "use_case": "racer",
-        "price_usd": 170,
-        "foot_shape_fit": "neutral",
-        "pros": ["Snappy and lightweight", "Great for workouts"],
-        "cons": ["Upper can feel snug for wide feet"],
-    },
-    {
-        "shoe_name": "Ghost Max 3",
-        "brand": "Brooks",
-        "cushioning": "max",
-        "stability": "medium",
-        "weight_grams": 289,
-        "use_case": "long run",
-        "price_usd": 155,
-        "foot_shape_fit": "wide",
-        "pros": ["Stable rocker", "Protective cushioning"],
-        "cons": ["Less agile for speed sessions"],
-    },
-    {
-        "shoe_name": "Hoka Mach X 3",
-        "brand": "HOKA",
-        "cushioning": "high",
-        "stability": "neutral",
-        "weight_grams": 242,
-        "use_case": "tempo",
-        "price_usd": 190,
-        "foot_shape_fit": "neutral",
-        "pros": ["Fast and fun ride", "Responsive midsole"],
-        "cons": ["Can feel narrow in forefoot"],
-    },
-    {
-        "shoe_name": "Peregrine 15",
-        "brand": "Saucony",
-        "cushioning": "medium",
-        "stability": "high",
-        "weight_grams": 277,
-        "use_case": "trail",
-        "price_usd": 145,
-        "foot_shape_fit": "neutral",
-        "pros": ["Great grip", "Secure upper"],
-        "cons": ["Firm on road transitions"],
-    },
-]
+logger = logging.getLogger(__name__)
 
 
 class TinyFishScraperAgent:
@@ -127,12 +19,17 @@ class TinyFishScraperAgent:
     """
 
     def __init__(self) -> None:
-        # Set TINYFISH_API_KEY in backend/.env (or shell env) when replacing mock logic.
         self.api_key = os.getenv("TINYFISH_API_KEY")
+        self.base_url = os.getenv(
+            "TINYFISH_BASE_URL", "https://agent.tinyfish.ai/v1/automation/run"
+        )
 
     def scrape(
         self, plan: ScrapePlan, user_input: RecommendationRequest
     ) -> list[ScrapedShoeData]:
+        if not self.api_key:
+            raise ValueError("TINYFISH_API_KEY is not configured")
+
         scraped_items: list[ScrapedShoeData] = []
         for target in plan.targets:
             target_items = self._scrape_target(
@@ -149,29 +46,127 @@ class TinyFishScraperAgent:
         goal: str,
         user_input: RecommendationRequest,
     ) -> Iterable[ScrapedShoeData]:
-        del goal  # Placeholder until real prompt-driven extraction is wired.
+        payload = {
+            "url": source_url,
+            "goal": self._build_goal(goal, user_input),
+            "browser_profile": "lite",
+            "proxy_config": {
+                "enabled": True,
+                "country_code": "US",
+            },
+            "api_integration": "runwise",
+        }
 
-        candidates = [
-            shoe
-            for shoe in MOCK_SHOE_DB
-            if shoe["price_usd"] <= user_input.budget * 1.15
-        ]
-        if not candidates:
-            candidates = MOCK_SHOE_DB.copy()
+        logger.info("Calling TinyFish automation url=%s", source_url)
+        response = self._post_json(payload)
 
-        # Bias selection toward intended use, but keep some diversity like real web data.
-        preferred = [
-            shoe
-            for shoe in candidates
-            if shoe["use_case"] == user_input.shoe_type.value
-        ]
-        pool = preferred + candidates
-        random.seed(f"{source_url}:{user_input.shoe_type.value}:{user_input.budget}")
-        sample_size = min(6, len(pool))
-        sampled = random.sample(pool, sample_size)
+        if response.get("status") != "COMPLETED":
+            raise ValueError(
+                f"TinyFish run failed for {source_url}: {response.get('error')}"
+            )
 
-        for shoe in sampled:
+        for shoe in self._extract_shoes(response.get("result"), source_url):
+            yield shoe
+
+    def _build_goal(self, goal: str, user_input: RecommendationRequest) -> str:
+        return (
+            f"{goal}. Extract shoes relevant to this runner profile: "
+            f"{user_input.model_dump_json()}. "
+            "Return strict JSON only with shape "
+            '{"shoes":[{"shoe_name":"","brand":"","cushioning":"","stability":"",'
+            '"weight_grams":0,"use_case":"","price_usd":0,"foot_shape_fit":"",'
+            '"pros":[],"cons":[]}]} '
+            "Use null for unknown scalar fields and [] for unknown pros/cons."
+        )
+
+    def _post_json(self, payload: dict) -> dict:
+        body = json.dumps(payload).encode("utf-8")
+        req = request.Request(
+            self.base_url,
+            data=body,
+            headers={
+                "Content-Type": "application/json",
+                "X-API-Key": self.api_key,
+            },
+            method="POST",
+        )
+
+        try:
+            with request.urlopen(req, timeout=90) as resp:
+                raw_body = resp.read().decode("utf-8")
+        except error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            raise ValueError(
+                f"TinyFish request failed with status {exc.code}: {detail}"
+            ) from exc
+        except error.URLError as exc:
+            raise ValueError(f"TinyFish request could not be completed: {exc}") from exc
+
+        parsed = json.loads(raw_body)
+        if not isinstance(parsed, dict):
+            raise ValueError("TinyFish response was not a JSON object")
+        return parsed
+
+    def _extract_shoes(
+        self, result: object, source_url: str
+    ) -> Iterable[ScrapedShoeData]:
+        parsed_result = result
+        if isinstance(parsed_result, str):
+            parsed_result = json.loads(parsed_result)
+
+        shoes_payload: list[dict] = []
+        if isinstance(parsed_result, dict):
+            raw_shoes = parsed_result.get("shoes")
+            if isinstance(raw_shoes, list):
+                shoes_payload = [item for item in raw_shoes if isinstance(item, dict)]
+        elif isinstance(parsed_result, list):
+            shoes_payload = [item for item in parsed_result if isinstance(item, dict)]
+
+        if not shoes_payload:
+            raise ValueError(f"TinyFish returned no shoe data for {source_url}")
+
+        for shoe in shoes_payload:
+            shoe_name = str(shoe.get("shoe_name") or shoe.get("name") or "").strip()
+            brand = str(shoe.get("brand") or "").strip()
+            if not shoe_name or not brand:
+                continue
             yield ScrapedShoeData(
-                **shoe,
+                shoe_name=shoe_name,
+                brand=brand,
+                cushioning=self._optional_text(shoe.get("cushioning")),
+                stability=self._optional_text(shoe.get("stability")),
+                weight_grams=self._optional_int(shoe.get("weight_grams")),
+                use_case=self._optional_text(shoe.get("use_case")),
+                price_usd=self._optional_float(shoe.get("price_usd")),
+                foot_shape_fit=self._optional_text(shoe.get("foot_shape_fit")),
+                pros=self._string_list(shoe.get("pros")),
+                cons=self._string_list(shoe.get("cons")),
                 source=source_url,
             )
+
+    def _optional_text(self, value: object) -> str | None:
+        if value is None:
+            return None
+        text = str(value).strip()
+        return text or None
+
+    def _optional_int(self, value: object) -> int | None:
+        if value in (None, ""):
+            return None
+        try:
+            return int(float(str(value)))
+        except (TypeError, ValueError):
+            return None
+
+    def _optional_float(self, value: object) -> float | None:
+        if value in (None, ""):
+            return None
+        try:
+            return float(str(value))
+        except (TypeError, ValueError):
+            return None
+
+    def _string_list(self, value: object) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        return [str(item).strip() for item in value if str(item).strip()]
