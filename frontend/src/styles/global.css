@@ -1,0 +1,261 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bricolage+Grotesque:wght@500;700;800&display=swap");
+
+:root {
+  --ink: #102027;
+  --ink-soft: #38515a;
+  --paper: #f3efe4;
+  --card: #fffdfa;
+  --brand: #0d9488;
+  --brand-deep: #0f766e;
+  --accent: #f97316;
+  --border: #dddbd2;
+  --shadow: 0 10px 30px rgba(16, 32, 39, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 10% 20%, rgba(13, 148, 136, 0.18) 0, transparent 35%),
+    radial-gradient(circle at 90% 10%, rgba(249, 115, 22, 0.18) 0, transparent 30%),
+    linear-gradient(170deg, #fff9ef 0%, #f2f5ef 100%);
+  font-family: "Space Grotesk", sans-serif;
+}
+
+main {
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+  padding: 2.5rem 0 4rem;
+  animation: page-enter 700ms ease both;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Bricolage Grotesque", sans-serif;
+  margin: 0;
+}
+
+p {
+  color: var(--ink-soft);
+}
+
+a {
+  color: var(--brand-deep);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.bg-orb {
+  position: fixed;
+  z-index: -1;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  filter: blur(52px);
+  opacity: 0.32;
+}
+
+.orb-one {
+  background: #14b8a6;
+  top: -80px;
+  left: -80px;
+}
+
+.orb-two {
+  background: #fb923c;
+  bottom: -80px;
+  right: -90px;
+}
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-header h1 {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.page-header p {
+  max-width: 65ch;
+  font-size: 1.05rem;
+}
+
+.grid-two {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+input,
+select,
+button {
+  font: inherit;
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.72rem 0.86rem;
+  background: #fffeff;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--brand);
+  outline: 2px solid rgba(13, 148, 136, 0.16);
+}
+
+button.primary {
+  margin-top: 0.8rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(90deg, var(--brand) 0%, #14b8a6 60%, #2dd4bf 100%);
+  color: white;
+  padding: 0.86rem 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+button.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(20, 184, 166, 0.28);
+}
+
+.pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.pill-list label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--border);
+  background: #ffffffcc;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.pill-list input {
+  width: auto;
+}
+
+.muted {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+.alert {
+  margin-top: 0.75rem;
+  color: #9a3412;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.results-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+
+.result-card {
+  padding: 1rem 1.1rem;
+  animation: card-in 500ms ease both;
+}
+
+.result-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.score-chip {
+  background: #0f766e;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.6rem;
+}
+
+.tag {
+  border: 1px solid #c6d9d6;
+  background: #effaf8;
+  color: #0f766e;
+  border-radius: 999px;
+  padding: 0.24rem 0.62rem;
+  font-size: 0.86rem;
+}
+
+.meta {
+  margin-top: 0.8rem;
+  font-size: 0.92rem;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 860px) {
+  .grid-two {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,7 @@
+{
+	"compilerOptions": {
+		"strict": true
+	},
+	"include": ["src", "astro.config.mjs", "env.d.ts"],
+	"exclude": ["dist", "node_modules"]
+}

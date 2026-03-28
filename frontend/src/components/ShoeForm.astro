@@ -1,0 +1,200 @@
+<section class="card" style="padding: 1.2rem 1.1rem;">
+	<form id="runwise-form" data-api-base="http://localhost:8000">
+		<div class="grid-two">
+			<div class="field">
+				<label for="budget">Budget (USD)</label>
+				<input
+					id="budget"
+					name="budget"
+					type="number"
+					min="50"
+					step="1"
+					value="170"
+					required
+				/>
+			</div>
+			<div class="field">
+				<label for="shoe_type">Shoe Type</label>
+				<select id="shoe_type" name="shoe_type" required>
+					<option value="daily trainer">Daily Trainer</option>
+					<option value="racer">Racer</option>
+					<option value="long run">Long Run</option>
+					<option value="trail">Trail</option>
+					<option value="tempo">Tempo</option>
+				</select>
+			</div>
+
+			<div class="field">
+				<label for="foot_shape">Foot Shape</label>
+				<select id="foot_shape" name="foot_shape" required>
+					<option value="wide">Wide</option>
+					<option value="neutral" selected>Neutral</option>
+					<option value="narrow">Narrow</option>
+				</select>
+			</div>
+			<div class="field">
+				<label for="running_style">Running Style</label>
+				<select id="running_style" name="running_style" required>
+					<option value="heel strike">Heel Strike</option>
+					<option value="midfoot">Midfoot</option>
+					<option value="forefoot">Forefoot</option>
+				</select>
+			</div>
+
+			<div class="field">
+				<label for="height_cm">Height (cm)</label>
+				<input
+					id="height_cm"
+					name="height_cm"
+					type="number"
+					min="120"
+					max="230"
+					step="1"
+					value="175"
+					required
+				/>
+			</div>
+			<div class="field">
+				<label for="weight_kg">Weight (kg)</label>
+				<input
+					id="weight_kg"
+					name="weight_kg"
+					type="number"
+					min="35"
+					max="180"
+					step="0.5"
+					value="70"
+					required
+				/>
+			</div>
+
+			<div class="field">
+				<label for="weekly_mileage_km">Weekly Mileage (km/week)</label>
+				<input
+					id="weekly_mileage_km"
+					name="weekly_mileage_km"
+					type="number"
+					min="0"
+					max="300"
+					step="1"
+					value="40"
+					required
+				/>
+			</div>
+			<div class="field">
+				<label for="experience_level">Experience Level</label>
+				<select id="experience_level" name="experience_level" required>
+					<option value="beginner">Beginner</option>
+					<option value="intermediate" selected>Intermediate</option>
+					<option value="advanced">Advanced</option>
+				</select>
+			</div>
+		</div>
+
+		<div class="field" style="margin-top: 1rem;">
+			<label>Preferences</label>
+			<div class="pill-list">
+				<label
+					><input
+						type="checkbox"
+						name="preferences"
+						value="high cushioning"
+					/>High cushioning</label
+				>
+				<label
+					><input
+						type="checkbox"
+						name="preferences"
+						value="stability"
+					/>Stability</label
+				>
+				<label
+					><input
+						type="checkbox"
+						name="preferences"
+						value="lightweight"
+					/>Lightweight</label
+				>
+				<label
+					><input type="checkbox" name="preferences" value="good lacing" />Good
+					lacing</label
+				>
+			</div>
+		</div>
+
+		<button class="primary" id="submit-button" type="submit"
+			>Find My Top 5 Shoes</button
+		>
+		<div id="form-status" class="muted" aria-live="polite"></div>
+		<div id="form-error" class="alert" style="display: none;"></div>
+	</form>
+</section>
+
+<script>
+	const form = document.querySelector<HTMLFormElement>("#runwise-form")
+	const submitButton =
+		document.querySelector<HTMLButtonElement>("#submit-button")
+	const statusNode = document.querySelector<HTMLElement>("#form-status")
+	const errorNode = document.querySelector<HTMLElement>("#form-error")
+
+	if (form && submitButton && statusNode && errorNode) {
+		form.addEventListener("submit", async event => {
+			event.preventDefault()
+
+			const apiBase = form.dataset.apiBase ?? "http://localhost:8000"
+			const formData = new FormData(form)
+
+			const payload = {
+				budget: Number(formData.get("budget")),
+				shoe_type: String(formData.get("shoe_type")),
+				foot_shape: String(formData.get("foot_shape")),
+				running_style: String(formData.get("running_style")),
+				preferences: formData.getAll("preferences").map(value => String(value)),
+				height_cm: Number(formData.get("height_cm")),
+				weight_kg: Number(formData.get("weight_kg")),
+				weekly_mileage_km: Number(formData.get("weekly_mileage_km")),
+				experience_level: String(formData.get("experience_level")),
+				max_results: 5
+			}
+
+			submitButton.setAttribute("disabled", "true")
+			statusNode.textContent = "Planning and scraping shoe sources..."
+			errorNode.style.display = "none"
+			errorNode.textContent = ""
+
+			try {
+				const response = await fetch(`${apiBase}/recommend-shoes`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json"
+					},
+					body: JSON.stringify(payload)
+				})
+
+				if (!response.ok) {
+					const errorPayload = await response
+						.json()
+						.catch(() => ({ detail: "Unknown error" }))
+					throw new Error(
+						errorPayload.detail || "Failed to fetch recommendations"
+					)
+				}
+
+				const data = await response.json()
+				sessionStorage.setItem("runwise:lastRequest", JSON.stringify(payload))
+				sessionStorage.setItem(
+					"runwise:recommendationResponse",
+					JSON.stringify(data)
+				)
+				window.location.href = "/results"
+			} catch (error) {
+				errorNode.style.display = "block"
+				errorNode.textContent =
+					error instanceof Error ? error.message : "Unexpected error"
+			} finally {
+				submitButton.removeAttribute("disabled")
+				statusNode.textContent = ""
+			}
+		})
+	}
+</script>

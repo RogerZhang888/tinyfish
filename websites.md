@@ -1,4 +1,4 @@
-// reviews 
+## reviews 
 
 runrepeat.com
 runningshoesguru.com
@@ -6,7 +6,7 @@ runnersworld.com
 believeintherun.com
 https://www.reddit.com/r/RunningShoeGeeks/
 
-// shoes
+## shoes
 
 adidas.com.sg
 nike.com
@@ -16,6 +16,3 @@ puma.com
 brooksrunning.com
 hoka.com
 saucony.com
-
-// prices
-

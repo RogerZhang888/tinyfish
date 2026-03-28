@@ -1,0 +1,112 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro"
+---
+
+<BaseLayout title="RunWise | Results">
+	<section class="page-header">
+		<h1>Your Top Shoe Picks</h1>
+		<p id="results-subtitle">
+			RunWise combined scraped web insights and profile matching to rank your
+			best options.
+		</p>
+		<p><a href="/">Run another recommendation</a></p>
+	</section>
+
+	<section id="metadata" class="card" style="padding: 1rem 1.1rem;"></section>
+	<section id="results" class="results-list"></section>
+
+	<script>
+		type RecommendationItem = {
+			name: string
+			brand: string
+			score: number
+			key_features: string[]
+			reason: string
+			best_for: string
+			sources: string[]
+		}
+
+		type RecommendationResponse = {
+			recommendations: RecommendationItem[]
+			metadata?: {
+				targets_planned?: number
+				items_scraped?: number
+				items_normalized?: number
+			}
+		}
+
+		const metadataNode = document.querySelector<HTMLElement>("#metadata")
+		const resultsNode = document.querySelector<HTMLElement>("#results")
+
+		const rawResponse = sessionStorage.getItem("runwise:recommendationResponse")
+		const parsedResponse: RecommendationResponse | null = rawResponse
+			? (JSON.parse(rawResponse) as RecommendationResponse)
+			: null
+
+		const escapeHtml = (unsafe: string): string =>
+			unsafe
+				.replaceAll("&", "&amp;")
+				.replaceAll("<", "&lt;")
+				.replaceAll(">", "&gt;")
+				.replaceAll('"', "&quot;")
+				.replaceAll("'", "&#039;")
+
+		if (!parsedResponse || !Array.isArray(parsedResponse.recommendations)) {
+			if (metadataNode) {
+				metadataNode.innerHTML =
+					'<p class="muted">No recommendation data found. Please submit the form again.</p>'
+			}
+		} else {
+			const metadata = parsedResponse.metadata ?? {}
+			if (metadataNode) {
+				metadataNode.innerHTML = `
+          <h3>Pipeline Summary</h3>
+          <p class="meta">
+            Targets planned: <strong>${Number(metadata.targets_planned ?? 0)}</strong>
+            | Items scraped: <strong>${Number(metadata.items_scraped ?? 0)}</strong>
+            | Shoes normalized: <strong>${Number(metadata.items_normalized ?? 0)}</strong>
+          </p>
+        `
+			}
+
+			const cards = parsedResponse.recommendations
+				.map((item: RecommendationItem, index: number) => {
+					const features = Array.isArray(item.key_features)
+						? item.key_features
+								.map(
+									(feature: string) =>
+										`<span class=\"tag\">${escapeHtml(String(feature))}</span>`
+								)
+								.join("")
+						: ""
+
+					const sourceLinks = Array.isArray(item.sources)
+						? item.sources
+								.map((source: string) => {
+									const safeSource = escapeHtml(String(source))
+									return `<a href=\"${safeSource}\" target=\"_blank\" rel=\"noreferrer\">${safeSource}</a>`
+								})
+								.join(" | ")
+						: ""
+
+					return `
+            <article class=\"card result-card\" style=\"animation-delay: ${index * 80}ms;\">
+              <div class=\"result-title\">
+                <h3>${index + 1}. ${escapeHtml(String(item.brand))} ${escapeHtml(String(item.name))}</h3>
+                <span class=\"score-chip\">${Number(item.score)} / 100</span>
+              </div>
+              <p><strong>Why recommended:</strong> ${escapeHtml(String(item.reason))}</p>
+              <p><strong>Best for:</strong> ${escapeHtml(String(item.best_for))}</p>
+              <div class=\"tag-row\">${features}</div>
+              <p class=\"meta"><strong>Sources:</strong> ${sourceLinks}</p>
+            </article>
+          `
+				})
+				.join("")
+
+			if (resultsNode) {
+				resultsNode.innerHTML = cards
+			}
+		}
+	</script>
+</BaseLayout>
