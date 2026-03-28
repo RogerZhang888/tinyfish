@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
+
 from backend.models.schemas import (
     RecommendationItem,
     RecommendationRequest,
     ScrapedShoeData,
 )
 from backend.services.openai_client import OpenAIClient
+
+logger = logging.getLogger(__name__)
 
 
 class ShoeRanker:
@@ -19,34 +23,46 @@ class ShoeRanker:
         user_input: RecommendationRequest,
         shoes: list[ScrapedShoeData],
     ) -> list[RecommendationItem]:
-        scored_candidates: list[dict] = []
-        for shoe in shoes:
-            score = self._score_shoe(user_input, shoe)
-            scored_candidates.append(
-                {
-                    "name": shoe.shoe_name,
-                    "brand": shoe.brand,
-                    "score": score,
-                    "reason": self._build_reason(user_input, shoe, score),
-                    "best_for": self._best_for(user_input, shoe),
-                    "key_features": OpenAIClient.feature_summary(shoe),
-                    "sources": [str(shoe.source)],
-                }
+        logger.info("ShoeRanker.rank called shoes=%s", len(shoes))
+        try:
+            scored_candidates: list[dict] = []
+            for shoe in shoes:
+                score = self._score_shoe(user_input, shoe)
+                scored_candidates.append(
+                    {
+                        "name": shoe.shoe_name,
+                        "brand": shoe.brand,
+                        "score": score,
+                        "reason": self._build_reason(user_input, shoe, score),
+                        "best_for": self._best_for(user_input, shoe),
+                        "key_features": OpenAIClient.feature_summary(shoe),
+                        "sources": [str(shoe.source)],
+                    }
+                )
+
+            scored_candidates.sort(key=lambda item: item["score"], reverse=True)
+            top_candidates = scored_candidates[: user_input.max_results]
+            logger.info("ShoeRanker.rank top_candidates=%s", len(top_candidates))
+
+            llm_refined = self.openai_client.rerank_recommendations(
+                user_input, top_candidates
             )
+            final_candidates = llm_refined if llm_refined else top_candidates
+            logger.info("ShoeRanker.rank final_candidates=%s", len(final_candidates))
 
-        scored_candidates.sort(key=lambda item: item["score"], reverse=True)
-        top_candidates = scored_candidates[: user_input.max_results]
-
-        llm_refined = self.openai_client.rerank_recommendations(
-            user_input, top_candidates
-        )
-        final_candidates = llm_refined if llm_refined else top_candidates
-
-        return [RecommendationItem(**candidate) for candidate in final_candidates]
+            return [RecommendationItem(**candidate) for candidate in final_candidates]
+        except Exception as exc:
+            logger.exception("ShoeRanker.rank failed: %s", exc)
+            raise
 
     def _score_shoe(
         self, user_input: RecommendationRequest, shoe: ScrapedShoeData
     ) -> int:
+        logger.info(
+            "ShoeRanker._score_shoe called brand=%s shoe_name=%s",
+            shoe.brand,
+            shoe.shoe_name,
+        )
         score = 45
 
         if shoe.use_case == user_input.shoe_type.value:
@@ -93,6 +109,12 @@ class ShoeRanker:
     def _build_reason(
         self, user_input: RecommendationRequest, shoe: ScrapedShoeData, score: int
     ) -> str:
+        logger.info(
+            "ShoeRanker._build_reason called brand=%s shoe_name=%s score=%s",
+            shoe.brand,
+            shoe.shoe_name,
+            score,
+        )
         parts = [f"Score {score} based on use-case, budget, and profile fit."]
         if shoe.use_case == user_input.shoe_type.value:
             parts.append("Matches your requested shoe category.")
@@ -107,6 +129,11 @@ class ShoeRanker:
     def _best_for(
         self, user_input: RecommendationRequest, shoe: ScrapedShoeData
     ) -> str:
+        logger.info(
+            "ShoeRanker._best_for called brand=%s shoe_name=%s",
+            shoe.brand,
+            shoe.shoe_name,
+        )
         if shoe.use_case == "trail":
             return "Trail sessions and uneven terrain"
         if user_input.experience_level == "beginner":
