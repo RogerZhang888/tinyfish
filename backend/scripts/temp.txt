@@ -1,0 +1,16 @@
+Set your TinyFish API key:
+export TINYFISH_API_KEY="your_key_here"
+
+Run JSON-only mode (default, no Supabase upload):
+python scrape_brand_catalog_to_supabase.py
+
+Optional: tune concurrency and output path:
+python scrape_brand_catalog_to_supabase.py --concurrency 6 --output backend/logs/shoe_catalog.json --verbose
+
+Optional: scrape only selected brands:
+python scrape_brand_catalog_to_supabase.py --brands nike adidas hoka
+
+If/when you want Supabase upload, add env vars and flag:
+export SUPABASE_URL="https://your-project.supabase.co"
+export SUPABASE_SERVICE_ROLE_KEY="your_service_role_key"
+python scrape_brand_catalog_to_supabase.py --upload-to-supabase

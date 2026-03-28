@@ -1,0 +1,15 @@
+[
+  {
+    "name": "HYPERBOOST EDGE Running Shoes",
+    "price": 289,
+    "brand": "adidas",
+    "weight": 255,
+    "type": [
+      "racer",
+      "long run"
+    ],
+    "description": "RUNNING SHOES WITH A HYPERBOOST PRO MIDSOLE FOR COMFORT & ENERGY ON YOUR RUN. Hyperboost Pro foam.",
+    "image_source": "https://assets.adidas.com/images/w_600,f_auto,q_auto/db89b50aa19642bfb99ace91516f0de4_9366/HYPERBOOST_EDGE_Running_Shoes_White_KI1913_01_00_standard.jpg",
+    "foot_shape": "neutral"
+  }
+]

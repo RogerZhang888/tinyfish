@@ -1,0 +1,41 @@
+curl https://api.openai.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer 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" \
+  -d '{
+    "model": "gpt-3.5-turbo",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful assistant."
+      },
+      {
+        "role": "user",
+        "content": "What is the capital of France?"
+      }
+    ]
+  }'
+
+curl -N -X POST https://agent.tinyfish.ai/v1/automation/run-sse \
+ -H "X-API-Key: sk-tinyfish-fkGSYBEqBhyNYWGHmgnaAW5At51MB8C0" \
+ -H "Content-Type: application/json" \
+ -d '{
+  "url": "https://agentql.com",
+  "goal": "Find all AgentQL subscription plans and their prices. Return result in json format"
+ }'
+
+curl -N -X POST https://agent.tinyfish.ai/v1/automation/run-sse \
+ -H "X-API-Key: sk-tinyfish-fkGSYBEqBhyNYWGHmgnaAW5At51MB8C0" \
+ -H "Content-Type: application/json" \
+ -d '{
+  "url": "https://www.adidas.com/us/men-running-shoes",
+  "goal": "Find the Adidas Adizero Evo SL. Return its name, price, and available colors in a JSON format."
+ }'
+
+
+curl -N -X POST https://agent.tinyfish.ai/v1/automation/run-sse \
+-H "X-API-Key: sk-tinyfish-fkGSYBEqBhyNYWGHmgnaAW5At51MB8C0" \
+-H "Content-Type: application/json" \
+-d '{
+"url": "https://en.wikipedia.org/wiki/Main_Page",
+"goal": "1. Focus search_box. 2. Type \"Donald Trump\". 3. Press Enter. 4. Wait for the article title \"Donald Trump\" to appear. 5. Extract the first sentence of the biography. 6. Return as { \"summary\": \"text\" }."
+}'
